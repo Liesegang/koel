@@ -21,6 +21,36 @@ describe('virtualScroller.vue', () => {
     expect(container.querySelector('.virtual-scroller')).toBeTruthy()
   })
 
+  it('requests the next page one viewport before the end', () => {
+    const onScrolledToEnd = vi.fn()
+    const frame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0)
+      return 0
+    })
+
+    try {
+      const { container } = h.render(Component, {
+        props: { items: Array.from({ length: 50 }, (_, i) => i), itemHeight: 64, onScrolledToEnd },
+      })
+      const scroller = container.querySelector<HTMLElement>('.virtual-scroller')!
+      Object.defineProperties(scroller, {
+        clientHeight: { value: 600 },
+        scrollHeight: { value: 3200 },
+      })
+
+      scroller.scrollTop = 1999
+      scroller.dispatchEvent(new Event('scroll'))
+      expect(onScrolledToEnd).not.toHaveBeenCalled()
+
+      scroller.scrollTop = 2000
+      scroller.dispatchEvent(new Event('scroll'))
+      expect(onScrolledToEnd).toHaveBeenCalledOnce()
+      expect(scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight).toBe(600)
+    } finally {
+      frame.mockRestore()
+    }
+  })
+
   it('exposes scrollToIndex that scrolls to the correct position', () => {
     const items = Array.from({ length: 100 }, (_, i) => ({ id: i, name: `Item ${i}` }))
     const itemHeight = 64

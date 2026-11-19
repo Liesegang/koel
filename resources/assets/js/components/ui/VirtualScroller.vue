@@ -48,7 +48,11 @@ const onScroll = (e: Event) =>
 
     emit('scroll', e)
 
-    if (scroller.value.scrollTop + scroller.value.clientHeight + itemHeight.value >= scroller.value.scrollHeight) {
+    const { scrollTop: top, clientHeight: viewportHeight, scrollHeight } = scroller.value
+    const remaining = scrollHeight - top - viewportHeight
+    const preloadDistance = Math.max(viewportHeight, itemHeight.value)
+
+    if (remaining <= preloadDistance) {
       emit('scrolled-to-end')
     }
   })
